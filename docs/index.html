@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AudioSyncer — Multicam Sync für Premiere Pro</title>
+    <style>
+        :root {
+            --bg-dark: #1E1E1E;
+            --bg-panel: #2D2D2D;
+            --bg-input: #232323;
+            --accent: #9E9EFF;
+            --accent-dim: #6666CC;
+            --text: #E0E0E0;
+            --text-dim: #999;
+            --border: #404040;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        .hero {
+            text-align: center;
+            padding: 80px 20px 60px;
+            background: linear-gradient(180deg, #252535 0%, var(--bg-dark) 100%);
+        }
+
+        .hero-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-dim));
+            border-radius: 18px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 24px;
+            font-size: 36px;
+        }
+
+        .hero h1 {
+            font-size: 48px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            letter-spacing: -1px;
+        }
+
+        .hero h1 span { color: var(--accent); }
+
+        .hero p {
+            font-size: 20px;
+            color: var(--text-dim);
+            max-width: 600px;
+            margin: 0 auto 32px;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 14px 28px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: #111;
+        }
+
+        .btn-primary:hover {
+            background: #B0B0FF;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: var(--bg-panel);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: #383838;
+            transform: translateY(-2px);
+        }
+
+        .badge-row {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin-bottom: 32px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            color: var(--text-dim);
+        }
+
+        .section {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 60px 20px;
+        }
+
+        .section h2 {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 40px;
+            text-align: center;
+        }
+
+        .section h2 span { color: var(--accent); }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .feature {
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 28px;
+            transition: transform 0.2s, border-color 0.2s;
+        }
+
+        .feature:hover {
+            transform: translateY(-4px);
+            border-color: var(--accent);
+        }
+
+        .feature-icon {
+            font-size: 28px;
+            margin-bottom: 12px;
+        }
+
+        .feature h3 {
+            font-size: 18px;
+            margin-bottom: 8px;
+        }
+
+        .feature p {
+            font-size: 14px;
+            color: var(--text-dim);
+        }
+
+        .workflow {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            counter-reset: step;
+        }
+
+        .step {
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px 20px;
+            text-align: center;
+            position: relative;
+        }
+
+        .step::before {
+            counter-increment: step;
+            content: counter(step);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            background: var(--accent);
+            color: #111;
+            font-weight: 700;
+            font-size: 14px;
+            border-radius: 50%;
+            margin-bottom: 12px;
+        }
+
+        .step h4 {
+            font-size: 15px;
+            margin-bottom: 6px;
+        }
+
+        .step p {
+            font-size: 13px;
+            color: var(--text-dim);
+        }
+
+        .tech-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+        }
+
+        .tech-item {
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .tech-item strong {
+            display: block;
+            font-size: 16px;
+            margin-bottom: 4px;
+            color: var(--accent);
+        }
+
+        .tech-item span {
+            font-size: 13px;
+            color: var(--text-dim);
+        }
+
+        .install-block {
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 24px;
+            font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+            font-size: 14px;
+            overflow-x: auto;
+            line-height: 1.8;
+        }
+
+        .install-block .comment { color: #666; }
+        .install-block .cmd { color: var(--accent); }
+
+        footer {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-dim);
+            font-size: 14px;
+            border-top: 1px solid var(--border);
+        }
+
+        footer a { color: var(--accent); text-decoration: none; }
+        footer a:hover { text-decoration: underline; }
+
+        @media (max-width: 600px) {
+            .hero h1 { font-size: 32px; }
+            .hero p { font-size: 16px; }
+            .section h2 { font-size: 24px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="hero">
+    <div class="hero-icon">🎬</div>
+    <h1>Audio<span>Syncer</span></h1>
+    <p>Multicam-Aufnahmen automatisch synchronisieren und als Premiere Pro Projekt exportieren.</p>
+    <div class="badge-row">
+        <span class="badge">macOS 14+</span>
+        <span class="badge">Swift &amp; SwiftUI</span>
+        <span class="badge">Keine Dependencies</span>
+    </div>
+    <div class="hero-buttons">
+        <a href="https://github.com/fmatsch/AudioSyncerPremierePro" class="btn btn-primary">
+            ↓ Source Code auf GitHub
+        </a>
+        <a href="https://github.com/fmatsch/AudioSyncerPremierePro#installation" class="btn btn-secondary">
+            Installationsanleitung
+        </a>
+    </div>
+</div>
+
+<div class="section">
+    <h2>So funktioniert's — in <span>5 Schritten</span></h2>
+    <div class="workflow">
+        <div class="step">
+            <h4>Audio laden</h4>
+            <p>Externe Recorder-Datei als Audio Master hinzufügen</p>
+        </div>
+        <div class="step">
+            <h4>Kameras laden</h4>
+            <p>Bis zu 6 Video-Dateien per Drag &amp; Drop</p>
+        </div>
+        <div class="step">
+            <h4>Synchronisieren</h4>
+            <p>Ein Klick — der Rest passiert automatisch</p>
+        </div>
+        <div class="step">
+            <h4>Exportieren</h4>
+            <p>Premiere Pro Projekt (.prproj) erstellen</p>
+        </div>
+        <div class="step">
+            <h4>Schneiden</h4>
+            <p>Multicam-Timeline direkt in Premiere Pro öffnen</p>
+        </div>
+    </div>
+</div>
+
+<div class="section">
+    <h2><span>Features</span></h2>
+    <div class="features">
+        <div class="feature">
+            <div class="feature-icon">🔊</div>
+            <h3>Audio-Waveform-Sync</h3>
+            <p>Kreuzkorrelation im Frequenzbereich mit FFT — dieselbe Methode wie PluralEyes. Hardwarebeschleunigt mit Apple Accelerate.</p>
+        </div>
+        <div class="feature">
+            <div class="feature-icon">📁</div>
+            <h3>Drag &amp; Drop</h3>
+            <p>Dateien einfach in die Slots ziehen. Unterstützt MP4, MOV, WAV, MP3, AAC und viele mehr.</p>
+        </div>
+        <div class="feature">
+            <div class="feature-icon">📊</div>
+            <h3>Waveform-Vorschau</h3>
+            <p>Visuelle Darstellung der Audio-Wellenformen mit Sync-Offset-Anzeige für jede Kamera.</p>
+        </div>
+        <div class="feature">
+            <div class="feature-icon">🎬</div>
+            <h3>Premiere Pro Export</h3>
+            <p>Generiert native .prproj Dateien. Öffnet sich direkt in Premiere Pro mit fertiger Multicam-Timeline.</p>
+        </div>
+        <div class="feature">
+            <div class="feature-icon">⚡</div>
+            <h3>Auto-Detection</h3>
+            <p>Erkennt Auflösung und Framerate automatisch aus den Videodateien. Unterstützt 23.976 bis 60 fps.</p>
+        </div>
+        <div class="feature">
+            <div class="feature-icon">🎨</div>
+            <h3>Premiere Pro Look</h3>
+            <p>Dunkles Interface angelehnt an Adobe Premiere Pro — fühlt sich an wie zu Hause.</p>
+        </div>
+    </div>
+</div>
+
+<div class="section">
+    <h2><span>Installation</span></h2>
+    <div class="install-block">
+        <span class="comment"># Repository klonen</span><br>
+        <span class="cmd">git clone</span> https://github.com/fmatsch/AudioSyncerPremierePro.git<br>
+        <span class="cmd">cd</span> AudioSyncerPremierePro/AudioSyncer<br><br>
+        <span class="comment"># Release-Build erstellen</span><br>
+        <span class="cmd">xcodebuild</span> -scheme AudioSyncer -configuration Release build CONFIGURATION_BUILD_DIR=../build<br><br>
+        <span class="comment"># App starten</span><br>
+        <span class="cmd">open</span> ../build/AudioSyncer.app
+    </div>
+</div>
+
+<div class="section">
+    <h2><span>Technologie</span></h2>
+    <div class="tech-grid">
+        <div class="tech-item">
+            <strong>SwiftUI</strong>
+            <span>Native macOS Interface</span>
+        </div>
+        <div class="tech-item">
+            <strong>AVFoundation</strong>
+            <span>Audio/Video-Verarbeitung</span>
+        </div>
+        <div class="tech-item">
+            <strong>Accelerate / vDSP</strong>
+            <span>Hardware-FFT für Sync</span>
+        </div>
+        <div class="tech-item">
+            <strong>Zero Dependencies</strong>
+            <span>Nur Apple Frameworks</span>
+        </div>
+    </div>
+</div>
+
+<footer>
+    <p>
+        AudioSyncer &mdash; MIT License &mdash;
+        <a href="https://github.com/fmatsch/AudioSyncerPremierePro">GitHub</a>
+    </p>
+</footer>
+
+</body>
+</html>

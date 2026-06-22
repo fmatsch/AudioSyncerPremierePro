@@ -1,0 +1,348 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		A10001000000000000000001 /* AudioSyncerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20001000000000000000001; };
+		A10002000000000000000001 /* MediaFile.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20002000000000000000001; };
+		A10003000000000000000001 /* ProjectSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20003000000000000000001; };
+		A10004000000000000000001 /* AppViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20004000000000000000001; };
+		A10005000000000000000001 /* AudioExtractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20005000000000000000001; };
+		A10006000000000000000001 /* AudioSyncEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20006000000000000000001; };
+		A10007000000000000000001 /* PremiereProjectGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20007000000000000000001; };
+		A10008000000000000000001 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20008000000000000000001; };
+		A10009000000000000000001 /* MediaDropZone.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20009000000000000000001; };
+		A10010000000000000000001 /* MediaListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20010000000000000000001; };
+		A10011000000000000000001 /* SyncProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20011000000000000000001; };
+		A10012000000000000000001 /* ExportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20012000000000000000001; };
+		A10013000000000000000001 /* WaveformView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20013000000000000000001; };
+		A10014000000000000000001 /* PremiereProTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20014000000000000000001; };
+		A10015000000000000000001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A20015000000000000000001; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		A20001000000000000000001 /* AudioSyncerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioSyncerApp.swift; sourceTree = "<group>"; };
+		A20002000000000000000001 /* MediaFile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaFile.swift; sourceTree = "<group>"; };
+		A20003000000000000000001 /* ProjectSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectSettings.swift; sourceTree = "<group>"; };
+		A20004000000000000000001 /* AppViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppViewModel.swift; sourceTree = "<group>"; };
+		A20005000000000000000001 /* AudioExtractor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioExtractor.swift; sourceTree = "<group>"; };
+		A20006000000000000000001 /* AudioSyncEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioSyncEngine.swift; sourceTree = "<group>"; };
+		A20007000000000000000001 /* PremiereProjectGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PremiereProjectGenerator.swift; sourceTree = "<group>"; };
+		A20008000000000000000001 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		A20009000000000000000001 /* MediaDropZone.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaDropZone.swift; sourceTree = "<group>"; };
+		A20010000000000000000001 /* MediaListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaListView.swift; sourceTree = "<group>"; };
+		A20011000000000000000001 /* SyncProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncProgressView.swift; sourceTree = "<group>"; };
+		A20012000000000000000001 /* ExportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportView.swift; sourceTree = "<group>"; };
+		A20013000000000000000001 /* WaveformView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WaveformView.swift; sourceTree = "<group>"; };
+		A20014000000000000000001 /* PremiereProTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PremiereProTheme.swift; sourceTree = "<group>"; };
+		A20015000000000000000001 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		A20016000000000000000001 /* AudioSyncer.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = AudioSyncer.entitlements; sourceTree = "<group>"; };
+		A30000000000000000000001 /* AudioSyncer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AudioSyncer.app; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		A40000000000000000000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		A50000000000000000000001 = {
+			isa = PBXGroup;
+			children = (
+				A50001000000000000000001 /* AudioSyncer */,
+				A50099000000000000000001 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		A50099000000000000000001 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				A30000000000000000000001 /* AudioSyncer.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		A50001000000000000000001 /* AudioSyncer */ = {
+			isa = PBXGroup;
+			children = (
+				A20001000000000000000001 /* AudioSyncerApp.swift */,
+				A50002000000000000000001 /* Models */,
+				A50003000000000000000001 /* Services */,
+				A50004000000000000000001 /* Views */,
+				A20015000000000000000001 /* Assets.xcassets */,
+				A20016000000000000000001 /* AudioSyncer.entitlements */,
+			);
+			path = AudioSyncer;
+			sourceTree = "<group>";
+		};
+		A50002000000000000000001 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				A20002000000000000000001 /* MediaFile.swift */,
+				A20003000000000000000001 /* ProjectSettings.swift */,
+				A20004000000000000000001 /* AppViewModel.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		A50003000000000000000001 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				A20005000000000000000001 /* AudioExtractor.swift */,
+				A20006000000000000000001 /* AudioSyncEngine.swift */,
+				A20007000000000000000001 /* PremiereProjectGenerator.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		A50004000000000000000001 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				A20008000000000000000001 /* ContentView.swift */,
+				A20009000000000000000001 /* MediaDropZone.swift */,
+				A20010000000000000000001 /* MediaListView.swift */,
+				A20011000000000000000001 /* SyncProgressView.swift */,
+				A20012000000000000000001 /* ExportView.swift */,
+				A50005000000000000000001 /* Components */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		A50005000000000000000001 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				A20013000000000000000001 /* WaveformView.swift */,
+				A20014000000000000000001 /* PremiereProTheme.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		A60000000000000000000001 /* AudioSyncer */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A80000000000000000000001 /* Build configuration list for PBXNativeTarget "AudioSyncer" */;
+			buildPhases = (
+				A70000000000000000000001 /* Sources */,
+				A40000000000000000000001 /* Frameworks */,
+				A70001000000000000000001 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = AudioSyncer;
+			productName = AudioSyncer;
+			productReference = A30000000000000000000001 /* AudioSyncer.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		A90000000000000000000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1500;
+				LastUpgradeCheck = 1500;
+				TargetAttributes = {
+					A60000000000000000000001 = {
+						CreatedOnToolsVersion = 15.0;
+					};
+				};
+			};
+			buildConfigurationList = A80001000000000000000001 /* Build configuration list for PBXProject "AudioSyncer" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = de;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				de,
+				en,
+				Base,
+			);
+			mainGroup = A50000000000000000000001;
+			productRefGroup = A50099000000000000000001 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				A60000000000000000000001 /* AudioSyncer */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		A70001000000000000000001 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10015000000000000000001 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		A70000000000000000000001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10001000000000000000001 /* AudioSyncerApp.swift in Sources */,
+				A10002000000000000000001 /* MediaFile.swift in Sources */,
+				A10003000000000000000001 /* ProjectSettings.swift in Sources */,
+				A10004000000000000000001 /* AppViewModel.swift in Sources */,
+				A10005000000000000000001 /* AudioExtractor.swift in Sources */,
+				A10006000000000000000001 /* AudioSyncEngine.swift in Sources */,
+				A10007000000000000000001 /* PremiereProjectGenerator.swift in Sources */,
+				A10008000000000000000001 /* ContentView.swift in Sources */,
+				A10009000000000000000001 /* MediaDropZone.swift in Sources */,
+				A10010000000000000000001 /* MediaListView.swift in Sources */,
+				A10011000000000000000001 /* SyncProgressView.swift in Sources */,
+				A10012000000000000000001 /* ExportView.swift in Sources */,
+				A10013000000000000000001 /* WaveformView.swift in Sources */,
+				A10014000000000000000001 /* PremiereProTheme.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		B10000000000000000000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		B10001000000000000000001 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+			};
+			name = Release;
+		};
+		B20000000000000000000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = AudioSyncer/AudioSyncer.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.video";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.audiosyncer.app;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		B20001000000000000000001 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = AudioSyncer/AudioSyncer.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.video";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.audiosyncer.app;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		A80001000000000000000001 /* Build configuration list for PBXProject "AudioSyncer" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B10000000000000000000001 /* Debug */,
+				B10001000000000000000001 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A80000000000000000000001 /* Build configuration list for PBXNativeTarget "AudioSyncer" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B20000000000000000000001 /* Debug */,
+				B20001000000000000000001 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+	};
+	rootObject = A90000000000000000000001 /* Project object */;
+}
