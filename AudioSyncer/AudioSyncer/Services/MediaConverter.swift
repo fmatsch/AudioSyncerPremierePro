@@ -7,7 +7,15 @@ enum ConversionQuality: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
-    var ffmpegProfile: String {
+    var vtProfile: String {
+        switch self {
+        case .proResHQ: return "3"
+        case .proRes: return "2"
+        case .proResLT: return "1"
+        }
+    }
+
+    var swProfile: String {
         switch self {
         case .proResHQ: return "3"
         case .proRes: return "2"
@@ -148,17 +156,30 @@ enum MediaConverter {
 
         var args: [String]
         if info.hasVideo {
-            args = [
-                "-i", url.path,
-                "-c:v", "prores_ks",
-                "-profile:v", quality.ffmpegProfile,
-                "-vendor", "apl0",
-                "-pix_fmt", "yuv422p10le",
-                "-c:a", "pcm_s24le",
-                "-ar", "48000",
-                "-y",
-                outputURL.path
-            ]
+            let useHW = await hasVideoToolbox(ffmpegPath: ffmpeg)
+            if useHW {
+                args = [
+                    "-i", url.path,
+                    "-c:v", "prores_videotoolbox",
+                    "-profile:v", quality.vtProfile,
+                    "-c:a", "pcm_s24le",
+                    "-ar", "48000",
+                    "-y",
+                    outputURL.path
+                ]
+            } else {
+                args = [
+                    "-i", url.path,
+                    "-c:v", "prores_ks",
+                    "-profile:v", quality.swProfile,
+                    "-vendor", "apl0",
+                    "-pix_fmt", "yuv422p10le",
+                    "-c:a", "pcm_s24le",
+                    "-ar", "48000",
+                    "-y",
+                    outputURL.path
+                ]
+            }
         } else {
             let wavOutput = outputDir.appendingPathComponent("\(baseName)_PCM.wav")
             try? FileManager.default.removeItem(at: wavOutput)
@@ -249,6 +270,25 @@ enum MediaConverter {
               let m = Double(parts[1]),
               let s = Double(parts[2]) else { return nil }
         return h * 3600 + m * 60 + s
+    }
+
+    private static func hasVideoToolbox(ffmpegPath: String) async -> Bool {
+        let process = Process()
+        let pipe = Pipe()
+        process.executableURL = URL(fileURLWithPath: ffmpegPath)
+        process.arguments = ["-encoders"]
+        process.standardOutput = pipe
+        process.standardError = FileHandle.nullDevice
+
+        do {
+            try process.run()
+            process.waitUntilExit()
+            let data = pipe.fileHandleForReading.readDataToEndOfFile()
+            let output = String(data: data, encoding: .utf8) ?? ""
+            return output.contains("prores_videotoolbox")
+        } catch {
+            return false
+        }
     }
 
     static func findFFmpeg() -> String? {
