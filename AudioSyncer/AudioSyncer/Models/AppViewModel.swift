@@ -15,6 +15,9 @@ class AppViewModel: ObservableObject {
     @Published var isConverting = false
     @Published var conversionProgress: Double = 0
     @Published var conversionStatusMessage = ""
+    @Published var conversionQuality: ConversionQuality = .proRes
+    @Published var estimatedTotalSize: Int64 = 0
+    @Published var isEstimating = false
 
     let settings = ProjectSettings()
 
@@ -79,6 +82,31 @@ class AppViewModel: ObservableObject {
         }
     }
 
+    func updateEstimate() async {
+        isEstimating = true
+        var total: Int64 = 0
+
+        var allFiles: [MediaFile] = []
+        if let master = audioMaster { allFiles.append(master) }
+        allFiles.append(contentsOf: cameras)
+
+        for file in allFiles {
+            let info = await MediaConverter.getFileInfo(url: file.url)
+            if info.hasVideo {
+                total += conversionQuality.estimatedFileSize(
+                    durationSeconds: info.duration,
+                    width: info.width, height: info.height, fps: info.fps
+                )
+            } else {
+                // Audio: 48kHz * 24bit * 2ch
+                total += Int64(info.duration * 48000 * 3 * 2)
+            }
+        }
+
+        estimatedTotalSize = total
+        isEstimating = false
+    }
+
     func startConversion() async {
         let panel = NSOpenPanel()
         panel.title = "Zielordner für konvertierte Dateien wählen"
@@ -97,6 +125,7 @@ class AppViewModel: ObservableObject {
         allFiles.append(contentsOf: cameras)
 
         let total = allFiles.count
+        let quality = conversionQuality
 
         for (index, file) in allFiles.enumerated() {
             file.convertStatus = .converting(progress: 0)
@@ -104,7 +133,9 @@ class AppViewModel: ObservableObject {
             conversionStatusMessage = "\(file.fileName) konvertieren…"
 
             do {
-                let result = try await MediaConverter.convert(url: file.url, outputDir: outputDir) { pct in
+                let result = try await MediaConverter.convert(
+                    url: file.url, outputDir: outputDir, quality: quality
+                ) { pct in
                     file.convertStatus = .converting(progress: pct)
                     self.conversionProgress = (Double(index) + pct) / Double(total)
                     self.objectWillChange.send()
@@ -124,7 +155,7 @@ class AppViewModel: ObservableObject {
         if failedCount > 0 {
             conversionStatusMessage = "\(convertedCount) konvertiert, \(failedCount) fehlgeschlagen"
         } else {
-            conversionStatusMessage = "Alle Dateien konvertiert (ProRes 422 HQ)"
+            conversionStatusMessage = "Alle Dateien konvertiert (\(quality.rawValue))"
         }
 
         isConverting = false

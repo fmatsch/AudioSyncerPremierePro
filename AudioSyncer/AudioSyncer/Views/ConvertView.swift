@@ -9,10 +9,39 @@ struct ConvertView: View {
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundColor(PPTheme.textPrimary)
 
-            Text("Konvertiert alle Dateien zu ProRes 422 HQ + PCM Audio für maximale Kompatibilität mit Premiere Pro (keine Plugins nötig).")
+            Text("Konvertiert alle Dateien zu ProRes + PCM Audio für maximale Kompatibilität mit Premiere Pro (keine Plugins nötig).")
                 .font(.system(size: 11))
                 .foregroundColor(PPTheme.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
+
+            // Quality picker
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Qualität")
+                    .font(.system(size: 12))
+                    .foregroundColor(PPTheme.textSecondary)
+
+                ForEach(ConversionQuality.allCases) { quality in
+                    qualityOption(quality)
+                }
+            }
+
+            // Estimated size
+            if viewModel.estimatedTotalSize > 0 || viewModel.isEstimating {
+                HStack(spacing: 6) {
+                    Image(systemName: "internaldrive")
+                        .foregroundColor(PPTheme.textSecondary)
+                        .font(.system(size: 11))
+                    if viewModel.isEstimating {
+                        Text("Größe wird geschätzt…")
+                            .font(.system(size: 11))
+                            .foregroundColor(PPTheme.textSecondary)
+                    } else {
+                        Text("Geschätzte Gesamtgröße: \(formatBytes(viewModel.estimatedTotalSize))")
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundColor(sizeColor)
+                    }
+                }
+            }
 
             if viewModel.isConverting {
                 VStack(spacing: 6) {
@@ -36,7 +65,7 @@ struct ConvertView: View {
             }
 
             // Per-file status
-            if viewModel.isConverting || viewModel.conversionStatusMessage.contains("konvertiert") {
+            if viewModel.isConverting || viewModel.allConverted {
                 VStack(spacing: 4) {
                     if let master = viewModel.audioMaster {
                         conversionRow(file: master)
@@ -61,6 +90,40 @@ struct ConvertView: View {
         }
         .padding(PPTheme.panelPadding)
         .ppPanel()
+        .onAppear { Task { await viewModel.updateEstimate() } }
+        .onChange(of: viewModel.conversionQuality) { _ in
+            Task { await viewModel.updateEstimate() }
+        }
+    }
+
+    private func qualityOption(_ quality: ConversionQuality) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: viewModel.conversionQuality == quality ? "largecircle.fill.circle" : "circle")
+                .foregroundColor(viewModel.conversionQuality == quality ? PPTheme.accent : PPTheme.textSecondary)
+                .font(.system(size: 12))
+
+            VStack(alignment: .leading, spacing: 1) {
+                Text(quality.rawValue)
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundColor(PPTheme.textPrimary)
+                Text(quality.description)
+                    .font(.system(size: 10))
+                    .foregroundColor(PPTheme.textSecondary)
+            }
+
+            Spacer()
+        }
+        .contentShape(Rectangle())
+        .onTapGesture {
+            viewModel.conversionQuality = quality
+        }
+    }
+
+    private var sizeColor: Color {
+        let gb = Double(viewModel.estimatedTotalSize) / 1_073_741_824
+        if gb > 100 { return PPTheme.error }
+        if gb > 50 { return PPTheme.warning }
+        return PPTheme.textPrimary
     }
 
     @ViewBuilder
@@ -95,12 +158,21 @@ struct ConvertView: View {
             Spacer()
 
             if case .converted(let url) = file.convertStatus {
-                Text(url.lastPathComponent)
-                    .font(.system(size: 9, design: .monospaced))
-                    .foregroundColor(PPTheme.success)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
+                if let size = try? FileManager.default.attributesOfItem(atPath: url.path)[.size] as? Int64 {
+                    Text(formatBytes(size))
+                        .font(.system(size: 9, design: .monospaced))
+                        .foregroundColor(PPTheme.success)
+                }
             }
         }
+    }
+
+    private func formatBytes(_ bytes: Int64) -> String {
+        let gb = Double(bytes) / 1_073_741_824
+        if gb >= 1.0 {
+            return String(format: "%.1f GB", gb)
+        }
+        let mb = Double(bytes) / 1_048_576
+        return String(format: "%.0f MB", mb)
     }
 }
