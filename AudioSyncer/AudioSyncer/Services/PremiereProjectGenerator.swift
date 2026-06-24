@@ -12,8 +12,9 @@ enum PremiereProjectGenerator {
         let ntsc = [29.97, 23.976, 59.94].contains(settings.frameRate)
         let timebase = ntsc ? Int(round(settings.frameRate * 1000.0 / 1001.0)) : Int(settings.frameRate)
 
-        let allOffsets = cameras.map { $0.offsetSeconds ?? 0.0 }
-        let earliestOffset = min(0, allOffsets.min() ?? 0)
+        // Negate offsets: cross-correlation offset convention is opposite to timeline position
+        let allTimelineOffsets = cameras.map { -($0.offsetSeconds ?? 0.0) }
+        let earliestOffset = min(0, allTimelineOffsets.min() ?? 0)
 
         let masterStart = frames(seconds: abs(earliestOffset), fps: settings.frameRate)
         let masterDuration = frames(seconds: audioMaster.duration, fps: settings.frameRate)
@@ -28,8 +29,8 @@ enum PremiereProjectGenerator {
         var cameraAudioTracks = ""
 
         for (index, camera) in cameras.enumerated() {
-            let offset = camera.offsetSeconds ?? 0.0
-            let timelineStart = frames(seconds: offset - earliestOffset, fps: settings.frameRate)
+            let timelineOffset = -(camera.offsetSeconds ?? 0.0)
+            let timelineStart = frames(seconds: timelineOffset - earliestOffset, fps: settings.frameRate)
             let clipDuration = frames(seconds: camera.duration, fps: settings.frameRate)
             let camFileURL = fileURL(camera.effectiveURL.path)
             let fileID = "file-cam-\(index + 1)"
@@ -226,8 +227,8 @@ enum PremiereProjectGenerator {
                                                 fps: Double, earliestOffset: Double) -> Int {
         var maxEnd = abs(earliestOffset) + audioMaster.duration
         for camera in cameras {
-            let offset = camera.offsetSeconds ?? 0.0
-            let end = (offset - earliestOffset) + camera.duration
+            let timelineOffset = -(camera.offsetSeconds ?? 0.0)
+            let end = (timelineOffset - earliestOffset) + camera.duration
             maxEnd = max(maxEnd, end)
         }
         return Int(maxEnd * fps)
