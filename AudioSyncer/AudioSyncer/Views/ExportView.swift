@@ -64,7 +64,7 @@ struct ExportView: View {
             }) {
                 HStack {
                     Image(systemName: "film.stack")
-                    Text("Premiere Pro Projekt erstellen")
+                    Text("XML für Premiere Pro exportieren")
                 }
                 .frame(maxWidth: .infinity)
             }

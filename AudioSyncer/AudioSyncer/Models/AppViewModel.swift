@@ -140,8 +140,8 @@ class AppViewModel: ObservableObject {
 
         let panel = NSSavePanel()
         panel.title = "Premiere Pro Projekt speichern"
-        panel.nameFieldStringValue = "\(settings.projectName).prproj"
-        panel.allowedContentTypes = [UTType(filenameExtension: "prproj") ?? .data]
+        panel.nameFieldStringValue = "\(settings.projectName).xml"
+        panel.allowedContentTypes = [.xml]
         panel.canCreateDirectories = true
 
         let response = panel.runModal()

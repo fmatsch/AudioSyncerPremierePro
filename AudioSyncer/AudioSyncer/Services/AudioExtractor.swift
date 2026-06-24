@@ -12,10 +12,12 @@ enum AudioExtractor {
     static let targetSampleRate: Double = 8000
 
     static func extract(from url: URL, maxDuration: Double = 60.0) async throws -> AudioExtractionResult {
-        let asset = AVURLAsset(url: url)
-        guard let audioTrack = try await asset.loadTracks(withMediaType: .audio).first else {
-            throw AudioExtractorError.noAudioTrack
-        }
+        let accessing = url.startAccessingSecurityScopedResource()
+        defer { if accessing { url.stopAccessingSecurityScopedResource() } }
+
+        let asset = AVURLAsset(url: url, options: [AVURLAssetPreferPreciseDurationAndTimingKey: true])
+
+        let audioTrack = try await findAudioTrack(in: asset)
 
         let duration = try await asset.load(.duration).seconds
         let outputSettings: [String: Any] = [
@@ -36,7 +38,9 @@ enum AudioExtractor {
         var allSamples = [Float]()
         allSamples.reserveCapacity(maxSamples)
 
-        reader.startReading()
+        guard reader.startReading() else {
+            throw AudioExtractorError.readingFailed(reader.error?.localizedDescription ?? "Unbekannter Fehler beim Starten")
+        }
 
         while reader.status == .reading {
             guard let sampleBuffer = output.copyNextSampleBuffer() else { break }
@@ -44,9 +48,9 @@ enum AudioExtractor {
 
             var length = 0
             var dataPointer: UnsafeMutablePointer<Int8>?
-            CMBlockBufferGetDataPointer(blockBuffer, atOffset: 0, lengthAtOffsetOut: nil, totalLengthOut: &length, dataPointerOut: &dataPointer)
+            let status = CMBlockBufferGetDataPointer(blockBuffer, atOffset: 0, lengthAtOffsetOut: nil, totalLengthOut: &length, dataPointerOut: &dataPointer)
 
-            if let dataPointer = dataPointer {
+            if status == kCMBlockBufferNoErr, let dataPointer = dataPointer, length > 0 {
                 let floatCount = length / MemoryLayout<Float>.size
                 let floatPointer = UnsafeRawPointer(dataPointer).bindMemory(to: Float.self, capacity: floatCount)
                 let buffer = UnsafeBufferPointer(start: floatPointer, count: floatCount)
@@ -56,10 +60,18 @@ enum AudioExtractor {
             if allSamples.count >= maxSamples { break }
         }
 
+        if reader.status == .failed {
+            throw AudioExtractorError.readingFailed(reader.error?.localizedDescription ?? "Lesen fehlgeschlagen")
+        }
+
         reader.cancelReading()
 
         if allSamples.count > maxSamples {
             allSamples = Array(allSamples.prefix(maxSamples))
+        }
+
+        guard !allSamples.isEmpty else {
+            throw AudioExtractorError.readingFailed("Keine Audio-Samples gelesen")
         }
 
         return AudioExtractionResult(
@@ -70,12 +82,19 @@ enum AudioExtractor {
     }
 
     static func extractWaveformSamples(from url: URL, targetCount: Int = 200) async throws -> (samples: [Float], duration: Double) {
-        let asset = AVURLAsset(url: url)
-        guard let audioTrack = try await asset.loadTracks(withMediaType: .audio).first else {
-            throw AudioExtractorError.noAudioTrack
+        let accessing = url.startAccessingSecurityScopedResource()
+        defer { if accessing { url.stopAccessingSecurityScopedResource() } }
+
+        let asset = AVURLAsset(url: url, options: [AVURLAssetPreferPreciseDurationAndTimingKey: true])
+        let duration = try await asset.load(.duration).seconds
+
+        let audioTrack: AVAssetTrack
+        do {
+            audioTrack = try await findAudioTrack(in: asset)
+        } catch {
+            return ([], duration)
         }
 
-        let duration = try await asset.load(.duration).seconds
         let outputSettings: [String: Any] = [
             AVFormatIDKey: kAudioFormatLinearPCM,
             AVLinearPCMBitDepthKey: 32,
@@ -91,7 +110,8 @@ enum AudioExtractor {
         reader.add(output)
 
         var allSamples = [Float]()
-        reader.startReading()
+
+        guard reader.startReading() else { return ([], duration) }
 
         while reader.status == .reading {
             guard let sampleBuffer = output.copyNextSampleBuffer() else { break }
@@ -99,9 +119,9 @@ enum AudioExtractor {
 
             var length = 0
             var dataPointer: UnsafeMutablePointer<Int8>?
-            CMBlockBufferGetDataPointer(blockBuffer, atOffset: 0, lengthAtOffsetOut: nil, totalLengthOut: &length, dataPointerOut: &dataPointer)
+            let status = CMBlockBufferGetDataPointer(blockBuffer, atOffset: 0, lengthAtOffsetOut: nil, totalLengthOut: &length, dataPointerOut: &dataPointer)
 
-            if let dataPointer = dataPointer {
+            if status == kCMBlockBufferNoErr, let dataPointer = dataPointer, length > 0 {
                 let floatCount = length / MemoryLayout<Float>.size
                 let floatPointer = UnsafeRawPointer(dataPointer).bindMemory(to: Float.self, capacity: floatCount)
                 allSamples.append(contentsOf: UnsafeBufferPointer(start: floatPointer, count: floatCount))
@@ -123,6 +143,24 @@ enum AudioExtractor {
         }
 
         return (waveform, duration)
+    }
+
+    private static func findAudioTrack(in asset: AVURLAsset) async throws -> AVAssetTrack {
+        // Try dedicated audio tracks first
+        let audioTracks = try await asset.loadTracks(withMediaType: .audio)
+        if let track = audioTracks.first { return track }
+
+        // Some containers embed audio differently — check all tracks
+        let allTracks = try await asset.load(.tracks)
+        for track in allTracks {
+            if track.mediaType == .audio { return track }
+        }
+
+        // Try loading via audio characteristics
+        let charTracks = try await asset.loadTracks(withMediaCharacteristic: .audible)
+        if let track = charTracks.first { return track }
+
+        throw AudioExtractorError.noAudioTrack
     }
 }
 
