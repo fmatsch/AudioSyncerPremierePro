@@ -17,6 +17,11 @@ struct ContentView: View {
                 // Header
                 headerView
 
+                // Convert controls
+                if viewModel.audioMaster != nil || !viewModel.cameras.isEmpty {
+                    ConvertView(viewModel: viewModel)
+                }
+
                 // Sync controls
                 SyncProgressView(viewModel: viewModel)
 

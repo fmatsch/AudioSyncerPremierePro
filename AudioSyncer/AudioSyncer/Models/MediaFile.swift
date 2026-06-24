@@ -56,6 +56,23 @@ enum SyncStatus: Equatable {
     }
 }
 
+enum ConvertStatus: Equatable {
+    case none
+    case converting(progress: Double)
+    case converted(URL)
+    case failed(String)
+
+    var isConverted: Bool {
+        if case .converted = self { return true }
+        return false
+    }
+
+    var isConverting: Bool {
+        if case .converting = self { return true }
+        return false
+    }
+}
+
 class MediaFile: ObservableObject, Identifiable {
     let id = UUID()
     let url: URL
@@ -63,12 +80,20 @@ class MediaFile: ObservableObject, Identifiable {
     @Published var syncStatus: SyncStatus = .pending
     @Published var waveformSamples: [Float] = []
     @Published var duration: Double = 0
+    @Published var convertStatus: ConvertStatus = .none
 
     var fileName: String { url.lastPathComponent }
 
     var hasVideo: Bool {
         let ext = url.pathExtension.lowercased()
-        return ["mp4", "mov", "m4v", "avi", "mxf"].contains(ext)
+        return ["mp4", "mov", "m4v", "avi", "mxf", "insv", "mkv"].contains(ext)
+    }
+
+    var effectiveURL: URL {
+        if case .converted(let convertedURL) = convertStatus {
+            return convertedURL
+        }
+        return url
     }
 
     var offsetSeconds: Double? {

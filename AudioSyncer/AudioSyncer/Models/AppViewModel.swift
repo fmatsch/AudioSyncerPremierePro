@@ -12,8 +12,23 @@ class AppViewModel: ObservableObject {
     @Published var showExportPanel = false
     @Published var alertMessage: String?
     @Published var showAlert = false
+    @Published var isConverting = false
+    @Published var conversionProgress: Double = 0
+    @Published var conversionStatusMessage = ""
 
     let settings = ProjectSettings()
+
+    var canConvert: Bool {
+        let hasFiles = audioMaster != nil || !cameras.isEmpty
+        let notBusy = !isConverting && !isSyncing
+        return hasFiles && notBusy
+    }
+
+    var allConverted: Bool {
+        let masterOk = audioMaster?.convertStatus.isConverted ?? true
+        let camerasOk = cameras.allSatisfy { $0.convertStatus.isConverted }
+        return masterOk && camerasOk
+    }
 
     var allFilesSynced: Bool {
         guard audioMaster != nil, !cameras.isEmpty else { return false }
@@ -62,6 +77,57 @@ class AppViewModel: ObservableObject {
         } catch {
             print("Waveform extraction failed: \(error)")
         }
+    }
+
+    func startConversion() async {
+        let panel = NSOpenPanel()
+        panel.title = "Zielordner für konvertierte Dateien wählen"
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.canCreateDirectories = true
+
+        let response = panel.runModal()
+        guard response == .OK, let outputDir = panel.url else { return }
+
+        isConverting = true
+        conversionProgress = 0
+
+        var allFiles: [MediaFile] = []
+        if let master = audioMaster { allFiles.append(master) }
+        allFiles.append(contentsOf: cameras)
+
+        let total = allFiles.count
+
+        for (index, file) in allFiles.enumerated() {
+            file.convertStatus = .converting(progress: 0)
+            objectWillChange.send()
+            conversionStatusMessage = "\(file.fileName) konvertieren…"
+
+            do {
+                let result = try await MediaConverter.convert(url: file.url, outputDir: outputDir) { pct in
+                    file.convertStatus = .converting(progress: pct)
+                    self.conversionProgress = (Double(index) + pct) / Double(total)
+                    self.objectWillChange.send()
+                }
+                file.convertStatus = .converted(result.convertedURL)
+            } catch {
+                file.convertStatus = .failed(error.localizedDescription)
+            }
+
+            conversionProgress = Double(index + 1) / Double(total)
+            objectWillChange.send()
+        }
+
+        let convertedCount = allFiles.filter { $0.convertStatus.isConverted }.count
+        let failedCount = allFiles.filter { if case .failed = $0.convertStatus { return true }; return false }.count
+
+        if failedCount > 0 {
+            conversionStatusMessage = "\(convertedCount) konvertiert, \(failedCount) fehlgeschlagen"
+        } else {
+            conversionStatusMessage = "Alle Dateien konvertiert (ProRes 422 HQ)"
+        }
+
+        isConverting = false
     }
 
     func startSync() async {
