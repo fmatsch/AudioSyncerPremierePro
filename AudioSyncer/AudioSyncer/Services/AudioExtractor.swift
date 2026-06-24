@@ -24,31 +24,63 @@ enum AudioExtractor {
         let accessing = url.startAccessingSecurityScopedResource()
         defer { if accessing { url.stopAccessingSecurityScopedResource() } }
 
+        NSLog("[AudioSyncer] extract() called for: %@", url.path)
+
         // Try AVFoundation first (fast, native)
-        if let result = try? await extractViaAVFoundation(url: url, maxDuration: maxDuration) {
-            return result
+        do {
+            let result = try await extractViaAVFoundation(url: url, maxDuration: maxDuration)
+            if isSilent(result.samples) {
+                NSLog("[AudioSyncer] AVFoundation returned silent samples, trying ffmpeg")
+            } else {
+                NSLog("[AudioSyncer] AVFoundation succeeded: %d samples", result.samples.count)
+                return result
+            }
+        } catch {
+            NSLog("[AudioSyncer] AVFoundation failed: %@", error.localizedDescription)
         }
 
         // Fallback: use ffmpeg to convert to temp WAV, then read that
-        return try await extractViaFFmpeg(url: url, maxDuration: maxDuration)
+        do {
+            let result = try await extractViaFFmpeg(url: url, maxDuration: maxDuration)
+            NSLog("[AudioSyncer] ffmpeg fallback succeeded: %d samples", result.samples.count)
+            return result
+        } catch {
+            NSLog("[AudioSyncer] ffmpeg fallback also failed: %@", error.localizedDescription)
+            throw error
+        }
     }
 
     static func extractWaveformSamples(from url: URL, targetCount: Int = 200) async throws -> (samples: [Float], duration: Double) {
         let accessing = url.startAccessingSecurityScopedResource()
         defer { if accessing { url.stopAccessingSecurityScopedResource() } }
 
+        NSLog("[AudioSyncer] extractWaveform() called for: %@", url.path)
+
         // Try AVFoundation first
-        if let result = try? await extractViaAVFoundation(url: url, maxDuration: .infinity) {
-            return (downsampleToWaveform(result.samples, targetCount: targetCount), result.duration)
+        do {
+            let result = try await extractViaAVFoundation(url: url, maxDuration: 120)
+            if isSilent(result.samples) {
+                NSLog("[AudioSyncer] Waveform AVFoundation returned silent samples, trying ffmpeg")
+            } else {
+                NSLog("[AudioSyncer] Waveform AVFoundation succeeded: %d samples", result.samples.count)
+                return (downsampleToWaveform(result.samples, targetCount: targetCount), result.duration)
+            }
+        } catch {
+            NSLog("[AudioSyncer] Waveform AVFoundation failed: %@", error.localizedDescription)
         }
 
         // Fallback: ffmpeg
-        if let result = try? await extractViaFFmpeg(url: url, maxDuration: .infinity) {
+        do {
+            let result = try await extractViaFFmpeg(url: url, maxDuration: 120)
+            NSLog("[AudioSyncer] Waveform ffmpeg succeeded: %d samples", result.samples.count)
             return (downsampleToWaveform(result.samples, targetCount: targetCount), result.duration)
+        } catch {
+            NSLog("[AudioSyncer] Waveform ffmpeg also failed: %@", error.localizedDescription)
         }
 
         // Last resort: get duration only
         let duration = await getDuration(url: url)
+        NSLog("[AudioSyncer] All waveform methods failed, duration only: %.1f", duration)
         return ([], duration)
     }
 
@@ -281,6 +313,14 @@ enum AudioExtractor {
         }
 
         return waveform
+    }
+
+    private static func isSilent(_ samples: [Float]) -> Bool {
+        guard !samples.isEmpty else { return true }
+        var sumSquares: Float = 0
+        vDSP_dotpr(samples, 1, samples, 1, &sumSquares, vDSP_Length(samples.count))
+        let rms = sqrt(sumSquares / Float(samples.count))
+        return rms < 0.001 || rms.isNaN || rms.isInfinite
     }
 
     private static func findAudioTrack(in asset: AVURLAsset) async throws -> AVAssetTrack {

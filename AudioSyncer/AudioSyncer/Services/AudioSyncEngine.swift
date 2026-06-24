@@ -11,11 +11,7 @@ enum AudioSyncEngine {
     static func findOffset(master: [Float], camera: [Float], sampleRate: Double) -> SyncResult {
         let n = master.count + camera.count - 1
         let fftLength = nextPowerOf2(n)
-
-        var masterPadded = [Float](repeating: 0, count: fftLength)
-        var cameraPadded = [Float](repeating: 0, count: fftLength)
-        masterPadded.replaceSubrange(0..<master.count, with: master)
-        cameraPadded.replaceSubrange(0..<camera.count, with: camera)
+        let halfN = fftLength / 2
 
         let log2n = vDSP_Length(log2(Double(fftLength)))
         guard let fftSetup = vDSP_create_fftsetup(log2n, FFTRadix(kFFTRadix2)) else {
@@ -23,83 +19,88 @@ enum AudioSyncEngine {
         }
         defer { vDSP_destroy_fftsetup(fftSetup) }
 
-        let halfN = fftLength / 2
+        // Pad signals
+        var masterPadded = [Float](repeating: 0, count: fftLength)
+        var cameraPadded = [Float](repeating: 0, count: fftLength)
+        for i in 0..<master.count { masterPadded[i] = master[i] }
+        for i in 0..<camera.count { cameraPadded[i] = camera[i] }
 
+        // FFT of master
         var masterReal = [Float](repeating: 0, count: halfN)
         var masterImag = [Float](repeating: 0, count: halfN)
+        performFFT(setup: fftSetup, input: &masterPadded, real: &masterReal, imag: &masterImag,
+                   halfN: halfN, log2n: log2n, direction: FFTDirection(kFFTDirection_Forward))
+
+        // FFT of camera
         var cameraReal = [Float](repeating: 0, count: halfN)
         var cameraImag = [Float](repeating: 0, count: halfN)
+        performFFT(setup: fftSetup, input: &cameraPadded, real: &cameraReal, imag: &cameraImag,
+                   halfN: halfN, log2n: log2n, direction: FFTDirection(kFFTDirection_Forward))
 
-        masterPadded.withUnsafeMutableBufferPointer { masterBuf in
-            masterReal.withUnsafeMutableBufferPointer { realBuf in
-                masterImag.withUnsafeMutableBufferPointer { imagBuf in
-                    var splitComplex = DSPSplitComplex(realp: realBuf.baseAddress!, imagp: imagBuf.baseAddress!)
-                    masterBuf.baseAddress!.withMemoryRebound(to: DSPComplex.self, capacity: halfN) { ptr in
-                        vDSP_ctoz(ptr, 2, &splitComplex, 1, vDSP_Length(halfN))
-                    }
-                    vDSP_fft_zrip(fftSetup, &splitComplex, 1, log2n, FFTDirection(kFFTDirection_Forward))
-                }
-            }
-        }
-
-        cameraPadded.withUnsafeMutableBufferPointer { cameraBuf in
-            cameraReal.withUnsafeMutableBufferPointer { realBuf in
-                cameraImag.withUnsafeMutableBufferPointer { imagBuf in
-                    var splitComplex = DSPSplitComplex(realp: realBuf.baseAddress!, imagp: imagBuf.baseAddress!)
-                    cameraBuf.baseAddress!.withMemoryRebound(to: DSPComplex.self, capacity: halfN) { ptr in
-                        vDSP_ctoz(ptr, 2, &splitComplex, 1, vDSP_Length(halfN))
-                    }
-                    vDSP_fft_zrip(fftSetup, &splitComplex, 1, log2n, FFTDirection(kFFTDirection_Forward))
-                }
-            }
-        }
-
-        // Cross-correlation: IFFT(FFT(master) * conj(FFT(camera)))
+        // Cross-correlation in frequency domain: FFT(master) * conj(FFT(camera))
         var corrReal = [Float](repeating: 0, count: halfN)
         var corrImag = [Float](repeating: 0, count: halfN)
-
         for i in 0..<halfN {
             let ar = masterReal[i], ai = masterImag[i]
-            let br = cameraReal[i], bi = -cameraImag[i] // conjugate
-            corrReal[i] = ar * br - ai * bi
-            corrImag[i] = ar * bi + ai * br
+            let br = cameraReal[i], bi = cameraImag[i]
+            corrReal[i] = ar * br + ai * bi   // real * real + imag * (-imag) conjugate
+            corrImag[i] = ai * br - ar * bi   // imag * real - real * (-imag) conjugate
         }
 
-        var corrSplit = DSPSplitComplex(
-            realp: &corrReal,
-            imagp: &corrImag
-        )
+        // Inverse FFT
+        var corrSplit = DSPSplitComplex(realp: &corrReal, imagp: &corrImag)
         vDSP_fft_zrip(fftSetup, &corrSplit, 1, log2n, FFTDirection(kFFTDirection_Inverse))
 
+        // Convert split complex back to interleaved real signal
         var result = [Float](repeating: 0, count: fftLength)
+        corrSplit = DSPSplitComplex(realp: &corrReal, imagp: &corrImag)
         result.withUnsafeMutableBufferPointer { resultBuf in
-            var split = DSPSplitComplex(realp: corrReal.withUnsafeMutableBufferPointer { $0.baseAddress! },
-                                         imagp: corrImag.withUnsafeMutableBufferPointer { $0.baseAddress! })
-            vDSP_ztoc(&split, 1, resultBuf.baseAddress!.withMemoryRebound(to: DSPComplex.self, capacity: halfN) { $0 }, 2, vDSP_Length(halfN))
+            resultBuf.baseAddress!.withMemoryRebound(to: DSPComplex.self, capacity: halfN) { complexPtr in
+                vDSP_ztoc(&corrSplit, 1, complexPtr, 2, vDSP_Length(halfN))
+            }
         }
 
-        // Normalize
-        var scale = Float(1.0 / Float(fftLength))
+        // Scale by 1/fftLength (vDSP convention)
+        var scale = 1.0 / Float(fftLength)
         vDSP_vsmul(result, 1, &scale, &result, 1, vDSP_Length(fftLength))
+
+        // Take absolute values for peak finding
+        var absResult = [Float](repeating: 0, count: fftLength)
+        vDSP_vabs(result, 1, &absResult, 1, vDSP_Length(fftLength))
 
         // Find peak
         var maxVal: Float = 0
         var maxIdx: vDSP_Length = 0
-        vDSP_maxvi(result, 1, &maxVal, &maxIdx, vDSP_Length(fftLength))
+        vDSP_maxvi(absResult, 1, &maxVal, &maxIdx, vDSP_Length(fftLength))
 
-        // Compute confidence as ratio of peak to mean
-        var mean: Float = 0
-        vDSP_meamgv(result, 1, &mean, vDSP_Length(fftLength))
-        let confidence = mean > 0 ? min(maxVal / mean / 10.0, 1.0) : 0
+        // Confidence: ratio of peak to mean absolute value
+        var meanAbs: Float = 0
+        vDSP_meamgv(result, 1, &meanAbs, vDSP_Length(fftLength))
+        let confidence = meanAbs > 0 ? min(maxVal / meanAbs / 10.0, 1.0) : 0
 
+        // Convert sample offset to seconds
         var offsetSamples = Int(maxIdx)
         if offsetSamples > fftLength / 2 {
             offsetSamples -= fftLength
         }
-
         let offsetSeconds = Double(offsetSamples) / sampleRate
 
+        NSLog("[AudioSyncer] Sync: fftLength=%d, peak at index %d (offset %.4fs), maxVal=%.6f, confidence=%.4f",
+              fftLength, Int(maxIdx), offsetSeconds, maxVal, confidence)
+
         return SyncResult(offsetSeconds: offsetSeconds, confidence: confidence)
+    }
+
+    private static func performFFT(setup: FFTSetup, input: inout [Float],
+                                    real: inout [Float], imag: inout [Float],
+                                    halfN: Int, log2n: vDSP_Length, direction: FFTDirection) {
+        input.withUnsafeMutableBufferPointer { inputBuf in
+            inputBuf.baseAddress!.withMemoryRebound(to: DSPComplex.self, capacity: halfN) { complexPtr in
+                var split = DSPSplitComplex(realp: &real, imagp: &imag)
+                vDSP_ctoz(complexPtr, 2, &split, 1, vDSP_Length(halfN))
+                vDSP_fft_zrip(setup, &split, 1, log2n, FFTDirection(direction))
+            }
+        }
     }
 
     private static func nextPowerOf2(_ n: Int) -> Int {
