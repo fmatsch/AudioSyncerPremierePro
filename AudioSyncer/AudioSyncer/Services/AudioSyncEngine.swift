@@ -40,11 +40,14 @@ enum AudioSyncEngine {
         // Cross-correlation in frequency domain: FFT(master) * conj(FFT(camera))
         var corrReal = [Float](repeating: 0, count: halfN)
         var corrImag = [Float](repeating: 0, count: halfN)
-        for i in 0..<halfN {
+        // vDSP packs DC in real[0] and Nyquist in imag[0] — handle separately
+        corrReal[0] = masterReal[0] * cameraReal[0]
+        corrImag[0] = masterImag[0] * cameraImag[0]
+        for i in 1..<halfN {
             let ar = masterReal[i], ai = masterImag[i]
             let br = cameraReal[i], bi = cameraImag[i]
-            corrReal[i] = ar * br + ai * bi   // real * real + imag * (-imag) conjugate
-            corrImag[i] = ai * br - ar * bi   // imag * real - real * (-imag) conjugate
+            corrReal[i] = ar * br + ai * bi
+            corrImag[i] = ai * br - ar * bi
         }
 
         // Inverse FFT

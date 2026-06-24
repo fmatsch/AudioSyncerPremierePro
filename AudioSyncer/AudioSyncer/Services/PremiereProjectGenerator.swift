@@ -24,13 +24,19 @@ enum PremiereProjectGenerator {
             fps: settings.frameRate, earliestOffset: earliestOffset
         )
 
+        NSLog("[AudioSyncer] XML Export: earliestOffset=%.4f, masterStart=%d frames (%.4fs), totalDuration=%d frames, fps=%.2f",
+              earliestOffset, masterStart, Double(masterStart) / settings.frameRate, totalDuration, settings.frameRate)
+
         // Each camera gets its own video track + audio track
         var videoTracks = ""
         var cameraAudioTracks = ""
 
         for (index, camera) in cameras.enumerated() {
-            let timelineOffset = -(camera.offsetSeconds ?? 0.0)
+            let syncOffset = camera.offsetSeconds ?? 0.0
+            let timelineOffset = -syncOffset
             let timelineStart = frames(seconds: timelineOffset - earliestOffset, fps: settings.frameRate)
+            NSLog("[AudioSyncer] XML Export: %@ syncOffset=%.4f, timelineOffset=%.4f, timelineStart=%d frames (%.4fs)",
+                  camera.fileName, syncOffset, timelineOffset, timelineStart, Double(timelineStart) / settings.frameRate)
             let clipDuration = frames(seconds: camera.duration, fps: settings.frameRate)
             let camFileURL = fileURL(camera.effectiveURL.path)
             let fileID = "file-cam-\(index + 1)"

@@ -20,7 +20,7 @@ enum AudioExtractor {
         AVNumberOfChannelsKey: 1
     ]
 
-    static func extract(from url: URL, maxDuration: Double = 60.0) async throws -> AudioExtractionResult {
+    static func extract(from url: URL, maxDuration: Double = 300.0) async throws -> AudioExtractionResult {
         let accessing = url.startAccessingSecurityScopedResource()
         defer { if accessing { url.stopAccessingSecurityScopedResource() } }
 
