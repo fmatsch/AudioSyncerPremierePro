@@ -17,7 +17,7 @@ class AppViewModel: ObservableObject {
 
     var allFilesSynced: Bool {
         guard audioMaster != nil, !cameras.isEmpty else { return false }
-        return cameras.allSatisfy { $0.syncStatus.isSynced }
+        return cameras.contains { $0.syncStatus.isSynced }
     }
 
     var canSync: Bool {
@@ -79,35 +79,43 @@ class AppViewModel: ObservableObject {
                 objectWillChange.send()
                 syncStatusMessage = "Audio von \(camera.role.rawValue) extrahieren…"
 
-                let cameraAudio = try await AudioExtractor.extract(from: camera.url)
+                do {
+                    let cameraAudio = try await AudioExtractor.extract(from: camera.url)
 
-                camera.syncStatus = .syncing
-                objectWillChange.send()
-                syncStatusMessage = "\(camera.role.rawValue) synchronisieren…"
+                    camera.syncStatus = .syncing
+                    objectWillChange.send()
+                    syncStatusMessage = "\(camera.role.rawValue) synchronisieren…"
 
-                let result = await Task.detached(priority: .userInitiated) {
-                    AudioSyncEngine.findOffset(
-                        master: masterAudio.samples,
-                        camera: cameraAudio.samples,
-                        sampleRate: masterAudio.sampleRate
-                    )
-                }.value
+                    let result = await Task.detached(priority: .userInitiated) {
+                        AudioSyncEngine.findOffset(
+                            master: masterAudio.samples,
+                            camera: cameraAudio.samples,
+                            sampleRate: masterAudio.sampleRate
+                        )
+                    }.value
 
-                camera.syncStatus = .synced(offsetSeconds: result.offsetSeconds)
+                    camera.syncStatus = .synced(offsetSeconds: result.offsetSeconds)
+                } catch {
+                    camera.syncStatus = .failed(error.localizedDescription)
+                }
+
                 syncProgress = Double(index + 1) / Double(cameras.count)
                 objectWillChange.send()
             }
 
-            syncStatusMessage = "Synchronisation abgeschlossen"
+            let syncedCount = cameras.filter { $0.syncStatus.isSynced }.count
+            let failedCount = cameras.filter { if case .failed = $0.syncStatus { return true }; return false }.count
 
-            // Auto-detect resolution from first camera
+            if failedCount > 0 {
+                syncStatusMessage = "\(syncedCount) synced, \(failedCount) fehlgeschlagen"
+            } else {
+                syncStatusMessage = "Synchronisation abgeschlossen"
+            }
+
             await detectVideoProperties()
 
         } catch {
             syncStatusMessage = "Fehler: \(error.localizedDescription)"
-            for camera in cameras where !camera.syncStatus.isSynced {
-                camera.syncStatus = .failed(error.localizedDescription)
-            }
             objectWillChange.send()
         }
 
@@ -148,9 +156,10 @@ class AppViewModel: ObservableObject {
         guard response == .OK, let url = panel.url else { return }
 
         do {
+            let syncedCameras = cameras.filter { $0.syncStatus.isSynced }
             try await PremiereProjectGenerator.generate(
                 audioMaster: master,
-                cameras: cameras,
+                cameras: syncedCameras,
                 settings: settings,
                 outputURL: url
             )
