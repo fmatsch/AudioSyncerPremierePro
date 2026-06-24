@@ -154,36 +154,10 @@ enum MediaConverter {
 
         let info = await getFileInfo(url: url)
 
-        var args: [String]
-        if info.hasVideo {
-            let useHW = await hasVideoToolbox(ffmpegPath: ffmpeg)
-            if useHW {
-                args = [
-                    "-i", url.path,
-                    "-c:v", "prores_videotoolbox",
-                    "-profile:v", quality.vtProfile,
-                    "-c:a", "pcm_s24le",
-                    "-ar", "48000",
-                    "-y",
-                    outputURL.path
-                ]
-            } else {
-                args = [
-                    "-i", url.path,
-                    "-c:v", "prores_ks",
-                    "-profile:v", quality.swProfile,
-                    "-vendor", "apl0",
-                    "-pix_fmt", "yuv422p10le",
-                    "-c:a", "pcm_s24le",
-                    "-ar", "48000",
-                    "-y",
-                    outputURL.path
-                ]
-            }
-        } else {
+        if !info.hasVideo {
             let wavOutput = outputDir.appendingPathComponent("\(baseName)_PCM.wav")
             try? FileManager.default.removeItem(at: wavOutput)
-            args = [
+            let args = [
                 "-i", url.path,
                 "-c:a", "pcm_s24le",
                 "-ar", "48000",
@@ -196,8 +170,44 @@ enum MediaConverter {
             )
         }
 
+        // Video: try hardware encoder first, fall back to software
+        let useHW = await hasVideoToolbox(ffmpegPath: ffmpeg)
+        if useHW {
+            let hwArgs = [
+                "-i", url.path,
+                "-c:v", "prores_videotoolbox",
+                "-profile:v", quality.vtProfile,
+                "-c:a", "pcm_s24le",
+                "-ar", "48000",
+                "-y",
+                outputURL.path
+            ]
+            do {
+                return try await runFFmpeg(
+                    executablePath: ffmpeg, args: hwArgs,
+                    duration: info.duration, outputURL: outputURL, progress: progress
+                )
+            } catch {
+                NSLog("[AudioSyncer] VideoToolbox failed for %@, falling back to software encoder", url.lastPathComponent)
+                try? FileManager.default.removeItem(at: outputURL)
+            }
+        }
+
+        // Software encoder fallback
+        let swArgs = [
+            "-i", url.path,
+            "-c:v", "prores_ks",
+            "-profile:v", quality.swProfile,
+            "-vendor", "apl0",
+            "-pix_fmt", "yuv422p10le",
+            "-c:a", "pcm_s24le",
+            "-ar", "48000",
+            "-y",
+            outputURL.path
+        ]
+
         return try await runFFmpeg(
-            executablePath: ffmpeg, args: args,
+            executablePath: ffmpeg, args: swArgs,
             duration: info.duration, outputURL: outputURL, progress: progress
         )
     }
