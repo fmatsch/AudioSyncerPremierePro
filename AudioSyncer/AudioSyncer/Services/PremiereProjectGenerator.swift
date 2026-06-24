@@ -23,11 +23,13 @@ enum PremiereProjectGenerator {
             fps: settings.frameRate, earliestOffset: earliestOffset
         )
 
-        // Build multiclip angles for each camera
-        var angles = ""
+        // Each camera gets its own video track + audio track
+        var videoTracks = ""
+        var cameraAudioTracks = ""
+
         for (index, camera) in cameras.enumerated() {
             let offset = camera.offsetSeconds ?? 0.0
-            let clipStart = frames(seconds: offset - earliestOffset, fps: settings.frameRate)
+            let timelineStart = frames(seconds: offset - earliestOffset, fps: settings.frameRate)
             let clipDuration = frames(seconds: camera.duration, fps: settings.frameRate)
             let camFileURL = fileURL(camera.effectiveURL.path)
             let fileID = "file-cam-\(index + 1)"
@@ -38,67 +40,53 @@ enum PremiereProjectGenerator {
                 duration: clipDuration, timebase: timebase, ntsc: ntsc,
                 width: settings.width, height: settings.height
             )
-            let fileRef = "<file id=\"\(fileID)\"/>"
 
-            angles += """
-                                        <angle>
-                                            <name>\(esc(camera.role.rawValue))</name>
-                                            <clip id="clip-angle-\(index + 1)">
-                                                <name>\(esc(camera.role.rawValue))</name>
-                                                <duration>\(totalDuration)</duration>
-                                                <rate>
-                                                    <timebase>\(timebase)</timebase>
-                                                    <ntsc>\(ntsc ? "TRUE" : "FALSE")</ntsc>
-                                                </rate>
-                                                <media>
-                                                    <video>
-                                                        <track>
-                                                            <clipitem id="clipitem-angle\(index + 1)-v">
-                                                                <name>\(esc(camera.fileName))</name>
-                                                                <enabled>TRUE</enabled>
-                                                                <duration>\(clipDuration)</duration>
-                                                                <rate>
-                                                                    <timebase>\(timebase)</timebase>
-                                                                    <ntsc>\(ntsc ? "TRUE" : "FALSE")</ntsc>
-                                                                </rate>
-                                                                <start>\(clipStart)</start>
-                                                                <end>\(clipStart + clipDuration)</end>
-                                                                <in>0</in>
-                                                                <out>\(clipDuration)</out>
-                                                                \(fileDef)
-                                                            </clipitem>
-                                                        </track>
-                                                    </video>
-                                                    <audio>
-                                                        <track>
-                                                            <clipitem id="clipitem-angle\(index + 1)-a">
-                                                                <name>\(esc(camera.fileName))</name>
-                                                                <enabled>TRUE</enabled>
-                                                                <duration>\(clipDuration)</duration>
-                                                                <rate>
-                                                                    <timebase>\(timebase)</timebase>
-                                                                    <ntsc>\(ntsc ? "TRUE" : "FALSE")</ntsc>
-                                                                </rate>
-                                                                <start>\(clipStart)</start>
-                                                                <end>\(clipStart + clipDuration)</end>
-                                                                <in>0</in>
-                                                                <out>\(clipDuration)</out>
-                                                                \(fileRef)
-                                                                <sourcetrack>
-                                                                    <mediatype>audio</mediatype>
-                                                                    <trackindex>1</trackindex>
-                                                                </sourcetrack>
-                                                            </clipitem>
-                                                        </track>
-                                                    </audio>
-                                                </media>
-                                            </clip>
-                                        </angle>
+            videoTracks += """
+                            <track>
+                                <clipitem id="clipitem-video-\(index + 1)">
+                                    <name>\(esc(camera.fileName))</name>
+                                    <enabled>TRUE</enabled>
+                                    <duration>\(clipDuration)</duration>
+                                    <rate>
+                                        <timebase>\(timebase)</timebase>
+                                        <ntsc>\(ntsc ? "TRUE" : "FALSE")</ntsc>
+                                    </rate>
+                                    <start>\(timelineStart)</start>
+                                    <end>\(timelineStart + clipDuration)</end>
+                                    <in>0</in>
+                                    <out>\(clipDuration)</out>
+                                    \(fileDef)
+                                </clipitem>
+                            </track>
+
+            """
+
+            cameraAudioTracks += """
+                            <track>
+                                <clipitem id="clipitem-camaudio-\(index + 1)">
+                                    <name>\(esc(camera.fileName))</name>
+                                    <enabled>TRUE</enabled>
+                                    <duration>\(clipDuration)</duration>
+                                    <rate>
+                                        <timebase>\(timebase)</timebase>
+                                        <ntsc>\(ntsc ? "TRUE" : "FALSE")</ntsc>
+                                    </rate>
+                                    <start>\(timelineStart)</start>
+                                    <end>\(timelineStart + clipDuration)</end>
+                                    <in>0</in>
+                                    <out>\(clipDuration)</out>
+                                    <file id="\(fileID)"/>
+                                    <sourcetrack>
+                                        <mediatype>audio</mediatype>
+                                        <trackindex>1</trackindex>
+                                    </sourcetrack>
+                                </clipitem>
+                            </track>
 
             """
         }
 
-        // Audio master angle
+        // Audio master
         let masterFileURL = fileURL(audioMaster.effectiveURL.path)
         let masterFileDef = fileDefinition(
             id: "file-master", name: audioMaster.fileName,
@@ -106,72 +94,6 @@ enum PremiereProjectGenerator {
             duration: masterDuration, timebase: timebase, ntsc: ntsc,
             width: nil, height: nil
         )
-
-        angles += """
-                                        <angle>
-                                            <name>Audio Master</name>
-                                            <clip id="clip-angle-master">
-                                                <name>Audio Master</name>
-                                                <duration>\(totalDuration)</duration>
-                                                <rate>
-                                                    <timebase>\(timebase)</timebase>
-                                                    <ntsc>\(ntsc ? "TRUE" : "FALSE")</ntsc>
-                                                </rate>
-                                                <media>
-                                                    <audio>
-                                                        <track>
-                                                            <clipitem id="clipitem-angle-master-a">
-                                                                <name>\(esc(audioMaster.fileName))</name>
-                                                                <enabled>TRUE</enabled>
-                                                                <duration>\(masterDuration)</duration>
-                                                                <rate>
-                                                                    <timebase>\(timebase)</timebase>
-                                                                    <ntsc>\(ntsc ? "TRUE" : "FALSE")</ntsc>
-                                                                </rate>
-                                                                <start>\(masterStart)</start>
-                                                                <end>\(masterStart + masterDuration)</end>
-                                                                <in>0</in>
-                                                                <out>\(masterDuration)</out>
-                                                                \(masterFileDef)
-                                                                <sourcetrack>
-                                                                    <mediatype>audio</mediatype>
-                                                                    <trackindex>1</trackindex>
-                                                                </sourcetrack>
-                                                            </clipitem>
-                                                        </track>
-                                                    </audio>
-                                                </media>
-                                            </clip>
-                                        </angle>
-        """
-
-        // Sequence audio tracks reference the multiclip
-        var audioTracks = ""
-        for ch in 1...2 {
-            audioTracks += """
-                                <track>
-                                    <clipitem id="clipitem-seq-a\(ch)">
-                                        <name>\(esc(settings.projectName))</name>
-                                        <enabled>TRUE</enabled>
-                                        <duration>\(totalDuration)</duration>
-                                        <rate>
-                                            <timebase>\(timebase)</timebase>
-                                            <ntsc>\(ntsc ? "TRUE" : "FALSE")</ntsc>
-                                        </rate>
-                                        <start>0</start>
-                                        <end>\(totalDuration)</end>
-                                        <in>0</in>
-                                        <out>\(totalDuration)</out>
-                                        <multiclip id="multiclip-1"/>
-                                        <sourcetrack>
-                                            <mediatype>audio</mediatype>
-                                            <trackindex>\(ch)</trackindex>
-                                        </sourcetrack>
-                                    </clipitem>
-                                </track>
-
-            """
-        }
 
         let xml = """
         <?xml version="1.0" encoding="UTF-8"?>
@@ -209,30 +131,7 @@ enum PremiereProjectGenerator {
                                 </rate>
                             </samplecharacteristics>
                         </format>
-                        <track>
-                            <clipitem id="clipitem-seq-v">
-                                <name>\(esc(settings.projectName))</name>
-                                <enabled>TRUE</enabled>
-                                <duration>\(totalDuration)</duration>
-                                <rate>
-                                    <timebase>\(timebase)</timebase>
-                                    <ntsc>\(ntsc ? "TRUE" : "FALSE")</ntsc>
-                                </rate>
-                                <start>0</start>
-                                <end>\(totalDuration)</end>
-                                <in>0</in>
-                                <out>\(totalDuration)</out>
-                                <multiclip id="multiclip-1" collapse="TRUE">
-                                    <name>\(esc(settings.projectName)) Multicam</name>
-                                    <duration>\(totalDuration)</duration>
-                                    <rate>
-                                        <timebase>\(timebase)</timebase>
-                                        <ntsc>\(ntsc ? "TRUE" : "FALSE")</ntsc>
-                                    </rate>
-        \(angles)
-                                </multiclip>
-                            </clipitem>
-                        </track>
+        \(videoTracks)
                     </video>
                     <audio>
                         <numOutputChannels>2</numOutputChannels>
@@ -242,7 +141,27 @@ enum PremiereProjectGenerator {
                                 <samplerate>48000</samplerate>
                             </samplecharacteristics>
                         </format>
-        \(audioTracks)
+                        <track>
+                            <clipitem id="clipitem-audio-master">
+                                <name>\(esc(audioMaster.fileName))</name>
+                                <enabled>TRUE</enabled>
+                                <duration>\(masterDuration)</duration>
+                                <rate>
+                                    <timebase>\(timebase)</timebase>
+                                    <ntsc>\(ntsc ? "TRUE" : "FALSE")</ntsc>
+                                </rate>
+                                <start>\(masterStart)</start>
+                                <end>\(masterStart + masterDuration)</end>
+                                <in>0</in>
+                                <out>\(masterDuration)</out>
+                                \(masterFileDef)
+                                <sourcetrack>
+                                    <mediatype>audio</mediatype>
+                                    <trackindex>1</trackindex>
+                                </sourcetrack>
+                            </clipitem>
+                        </track>
+        \(cameraAudioTracks)
                     </audio>
                 </media>
             </sequence>
@@ -265,41 +184,41 @@ enum PremiereProjectGenerator {
     private static func fileDefinition(id: String, name: String, pathurl: String,
                                         duration: Int, timebase: Int, ntsc: Bool,
                                         width: Int?, height: Int?) -> String {
-        var media = ""
+        var mediaContent = ""
         if let w = width, let h = height {
-            media += """
-                <video>
-                    <samplecharacteristics>
-                        <width>\(w)</width>
-                        <height>\(h)</height>
-                    </samplecharacteristics>
-                </video>
+            mediaContent += """
+                                        <video>
+                                            <samplecharacteristics>
+                                                <width>\(w)</width>
+                                                <height>\(h)</height>
+                                            </samplecharacteristics>
+                                        </video>
 
             """
         }
-        media += """
-            <audio>
-                <samplecharacteristics>
-                    <depth>16</depth>
-                    <samplerate>48000</samplerate>
-                </samplecharacteristics>
-                <channelcount>2</channelcount>
-            </audio>
+        mediaContent += """
+                                        <audio>
+                                            <samplecharacteristics>
+                                                <depth>16</depth>
+                                                <samplerate>48000</samplerate>
+                                            </samplecharacteristics>
+                                            <channelcount>2</channelcount>
+                                        </audio>
         """
 
         return """
         <file id="\(id)">
-            <name>\(esc(name))</name>
-            <pathurl>\(esc(pathurl))</pathurl>
-            <rate>
-                <timebase>\(timebase)</timebase>
-                <ntsc>\(ntsc ? "TRUE" : "FALSE")</ntsc>
-            </rate>
-            <duration>\(duration)</duration>
-            <media>
-                \(media)
-            </media>
-        </file>
+                                        <name>\(esc(name))</name>
+                                        <pathurl>\(esc(pathurl))</pathurl>
+                                        <rate>
+                                            <timebase>\(timebase)</timebase>
+                                            <ntsc>\(ntsc ? "TRUE" : "FALSE")</ntsc>
+                                        </rate>
+                                        <duration>\(duration)</duration>
+                                        <media>
+        \(mediaContent)
+                                        </media>
+                                    </file>
         """
     }
 
