@@ -97,26 +97,28 @@ struct ConvertView: View {
     }
 
     private func qualityOption(_ quality: ConversionQuality) -> some View {
-        HStack(spacing: 8) {
-            Image(systemName: viewModel.conversionQuality == quality ? "largecircle.fill.circle" : "circle")
-                .foregroundColor(viewModel.conversionQuality == quality ? PPTheme.accent : PPTheme.textSecondary)
-                .font(.system(size: 12))
-
-            VStack(alignment: .leading, spacing: 1) {
-                Text(quality.rawValue)
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundColor(PPTheme.textPrimary)
-                Text(quality.description)
-                    .font(.system(size: 10))
-                    .foregroundColor(PPTheme.textSecondary)
-            }
-
-            Spacer()
-        }
-        .contentShape(Rectangle())
-        .onTapGesture {
+        Button {
             viewModel.conversionQuality = quality
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: viewModel.conversionQuality == quality ? "largecircle.fill.circle" : "circle")
+                    .foregroundColor(viewModel.conversionQuality == quality ? PPTheme.accent : PPTheme.textSecondary)
+                    .font(.system(size: 12))
+
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(quality.rawValue)
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundColor(PPTheme.textPrimary)
+                    Text(quality.description)
+                        .font(.system(size: 10))
+                        .foregroundColor(PPTheme.textSecondary)
+                }
+
+                Spacer()
+            }
+            .contentShape(Rectangle())
         }
+        .buttonStyle(.plain)
     }
 
     private var sizeColor: Color {
